@@ -9,18 +9,19 @@ import { formatCurrency } from "@/constants/currencies";
 import { categoryColors } from "@/constants/categories";
 import {
   TrendingUp, TrendingDown, PiggyBank, ArrowUpRight,
-  ChevronRight, Bell, Wallet, BarChart3,
+  ChevronRight, Settings, Wallet, BarChart3,
 } from "lucide-react-native";
 import React, { useMemo } from "react";
-import { LineChart, PieChart } from "react-native-chart-kit";
+import { LineChart, PieChart as GiftedPieChart } from "react-native-gifted-charts";
+import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { format, parseISO, subDays, startOfDay } from "date-fns";
 
 const screenWidth = Dimensions.get("window").width;
 
 export default function DashboardScreen() {
+  const router = useRouter();
   const {
-    totalBalance, totalIncome, totalExpenses,
     totalInvestments, totalSavings, expensesByCategory,
     primaryCurrency, transactions, settings,
   } = useBudget();
@@ -35,12 +36,12 @@ export default function DashboardScreen() {
   // Real spending trend: last 7 days from actual transactions
   const spendingTrend = useMemo(() => {
     const days = Array.from({ length: 7 }, (_, i) => subDays(new Date(), 6 - i));
-    const labels = days.map((d) =>
+    const dayLabels = days.map((d) =>
       language === "fr"
         ? ["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"][d.getDay()]
         : ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d.getDay()]
     );
-    const data = days.map((d) => {
+    const values = days.map((d) => {
       const dayStart = startOfDay(d).getTime();
       const dayEnd = dayStart + 86400000;
       return transactions
@@ -50,19 +51,21 @@ export default function DashboardScreen() {
         })
         .reduce((acc, t) => acc + t.amount, 0);
     });
-    // If all zeros, show empty state instead of broken chart
-    const hasData = data.some((v) => v > 0);
-    return { labels, datasets: [{ data: hasData ? data : [0, 0, 0, 0, 0, 0, 0] }], hasData };
+    const hasData = values.some((v) => v > 0);
+    const data = (hasData ? values : [0, 0, 0, 0, 0, 0, 0]).map((value, i) => ({
+      value,
+      label: dayLabels[i],
+    }));
+    return { data, hasData };
   }, [transactions, language]);
 
   const pieChartData = useMemo(() => {
     return expensesByCategory
       .filter((item) => item.amount > 0)
       .map((item) => ({
-        name: t(`categories.${item.category}`),
-        amount: item.amount,
+        value: item.amount,
         color: categoryColors[item.category] || Colors.light.textSecondary,
-        legendFontColor: Colors.light.text,
+        text: t(`categories.${item.category}`),
       }));
   }, [expensesByCategory, t]);
 
@@ -91,9 +94,12 @@ export default function DashboardScreen() {
             <Text style={styles.greeting}>{getGreeting()},</Text>
             <Text style={styles.userName}>{displayName}</Text>
           </View>
-          <View style={styles.notificationButton}>
-            <Bell color={Colors.light.textSecondary} size={22} />
-          </View>
+          <TouchableOpacity
+            style={styles.notificationButton}
+            onPress={() => router.push("/(tabs)/settings")}
+          >
+            <Settings color={Colors.light.textSecondary} size={22} />
+          </TouchableOpacity>
         </View>
 
         {/* Balance Card */}
@@ -140,16 +146,18 @@ export default function DashboardScreen() {
           </View>
           {pieChartData.length > 0 ? (
             <>
-              <PieChart
-                data={pieChartData}
-                width={screenWidth - 40}
-                height={180}
-                chartConfig={{ color: (opacity = 1) => `rgba(0,0,0,${opacity})` }}
-                accessor="amount"
-                backgroundColor="transparent"
-                paddingLeft="0"
-                hasLegend={false}
-              />
+              <View style={{ alignItems: "center", marginBottom: 8 }}>
+                <GiftedPieChart
+                  data={pieChartData}
+                  radius={80}
+                  innerRadius={45}
+                  centerLabelComponent={() => (
+                    <Text style={{ fontSize: 12, color: Colors.light.textSecondary, textAlign: "center" }}>
+                      {t("dashboard.expenses")}
+                    </Text>
+                  )}
+                />
+              </View>
               <View style={styles.categoryLegend}>
                 {expensesByCategory.slice(0, 4).map((item) => (
                   <View key={item.category} style={styles.legendItem}>
@@ -181,21 +189,20 @@ export default function DashboardScreen() {
           {spendingTrend.hasData ? (
             <View style={styles.chartCard}>
               <LineChart
-                data={spendingTrend}
+                data={spendingTrend.data}
                 width={screenWidth - 80}
                 height={160}
-                chartConfig={{
-                  backgroundColor: Colors.light.surface,
-                  backgroundGradientFrom: Colors.light.surface,
-                  backgroundGradientTo: Colors.light.surface,
-                  decimalPlaces: 0,
-                  color: () => Colors.light.tint,
-                  labelColor: () => Colors.light.textSecondary,
-                  propsForDots: { r: "4", strokeWidth: "2", stroke: Colors.light.tint },
-                }}
-                bezier
-                withVerticalLines={false}
-                style={{ marginVertical: 8, borderRadius: 16 }}
+                color={Colors.light.tint}
+                thickness={2}
+                curved
+                hideDataPoints={false}
+                dataPointsColor={Colors.light.tint}
+                xAxisLabelTextStyle={{ color: Colors.light.textSecondary, fontSize: 11 }}
+                yAxisTextStyle={{ color: Colors.light.textSecondary, fontSize: 11 }}
+                noOfSections={4}
+                areaChart
+                startFillColor={Colors.light.tint + "40"}
+                endFillColor={Colors.light.tint + "05"}
               />
             </View>
           ) : (

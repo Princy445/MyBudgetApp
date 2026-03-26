@@ -13,7 +13,7 @@ import {
 } from "lucide-react-native";
 import React, { useState, useCallback, useMemo } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { LineChart } from "react-native-chart-kit";
+import { LineChart } from "react-native-gifted-charts";
 import type { Investment } from "@/types";
 
 const screenWidth = Dimensions.get("window").width;
@@ -54,10 +54,10 @@ export default function InvestmentsScreen() {
   const chartData = useMemo(() => {
     if (!hasChartData) return null;
     const displayed = investments.slice(0, 6);
-    return {
-      labels: displayed.map((i) => i.name.length > 6 ? i.name.slice(0, 5) + "…" : i.name),
-      datasets: [{ data: displayed.map((i) => i.currentValue) }],
-    };
+    return displayed.map((i) => ({
+      value: i.currentValue,
+      label: i.name.length > 6 ? i.name.slice(0, 5) + "…" : i.name,
+    }));
   }, [investments, hasChartData]);
 
   const openAdd = () => {
@@ -146,18 +146,17 @@ export default function InvestmentsScreen() {
                 data={chartData}
                 width={screenWidth - 80}
                 height={160}
-                chartConfig={{
-                  backgroundColor: Colors.light.surface,
-                  backgroundGradientFrom: Colors.light.surface,
-                  backgroundGradientTo: Colors.light.surface,
-                  decimalPlaces: 0,
-                  color: () => Colors.light.tint,
-                  labelColor: () => Colors.light.textSecondary,
-                  propsForDots: { r: "4", strokeWidth: "2", stroke: Colors.light.tint },
-                }}
-                bezier
-                withVerticalLines={false}
-                style={{ marginVertical: 8, borderRadius: 16 }}
+                color={Colors.light.tint}
+                thickness={2}
+                curved
+                hideDataPoints={false}
+                dataPointsColor={Colors.light.tint}
+                xAxisLabelTextStyle={{ color: Colors.light.textSecondary, fontSize: 11 }}
+                yAxisTextStyle={{ color: Colors.light.textSecondary, fontSize: 11 }}
+                noOfSections={4}
+                areaChart
+                startFillColor={Colors.light.tint + "40"}
+                endFillColor={Colors.light.tint + "05"}
               />
             </View>
           </View>

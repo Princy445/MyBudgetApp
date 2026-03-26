@@ -3,10 +3,12 @@ import { Tabs } from "expo-router";
 import React from "react";
 import Colors from "@/constants/colors";
 import { useLanguage } from "@/hooks/useLanguageContext";
-import { Home, Receipt, Target, TrendingUp, Settings } from "lucide-react-native";
+import { Home, Receipt, Target, TrendingUp } from "lucide-react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function TabLayout() {
   const { t } = useLanguage();
+  const insets = useSafeAreaInsets();
 
   return (
     <Tabs
@@ -18,12 +20,13 @@ export default function TabLayout() {
           backgroundColor: Colors.light.surface,
           borderTopColor: Colors.light.border,
           borderTopWidth: 1,
-          paddingBottom: 4,
-          height: 60,
+          height: 56 + insets.bottom,
+          paddingBottom: insets.bottom + 4,
+          paddingTop: 6,
         },
         tabBarLabelStyle: {
           fontSize: 11,
-          fontWeight: "500",
+          fontWeight: "600",
         },
       }}
     >
@@ -31,35 +34,34 @@ export default function TabLayout() {
         name="(home)"
         options={{
           title: t("navigation.home"),
-          tabBarIcon: ({ color, size }) => <Home color={color} size={size} />,
+          tabBarIcon: ({ color }) => <Home color={color} size={22} />,
         }}
       />
       <Tabs.Screen
         name="transactions"
         options={{
           title: t("navigation.transactions"),
-          tabBarIcon: ({ color, size }) => <Receipt color={color} size={size} />,
+          tabBarIcon: ({ color }) => <Receipt color={color} size={22} />,
         }}
       />
       <Tabs.Screen
         name="budget"
         options={{
           title: t("navigation.budget"),
-          tabBarIcon: ({ color, size }) => <Target color={color} size={size} />,
+          tabBarIcon: ({ color }) => <Target color={color} size={22} />,
         }}
       />
       <Tabs.Screen
         name="investments"
         options={{
           title: t("navigation.investments"),
-          tabBarIcon: ({ color, size }) => <TrendingUp color={color} size={size} />,
+          tabBarIcon: ({ color }) => <TrendingUp color={color} size={22} />,
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          title: t("navigation.settings"),
-          tabBarIcon: ({ color, size }) => <Settings color={color} size={size} />,
+          href: null,
         }}
       />
     </Tabs>
